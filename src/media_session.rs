@@ -1,12 +1,14 @@
 use core::fmt;
 
 use windows::Media::Control::{
-    GlobalSystemMediaTransportControlsSessionManager,
+    GlobalSystemMediaTransportControlsSession, GlobalSystemMediaTransportControlsSessionManager,
     GlobalSystemMediaTransportControlsSessionMediaProperties,
 };
 
+use crate::media_status::MediaStatus;
+
 pub struct MediaSession {
-    // session: GlobalSystemMediaTransportControlsSession,
+    session: GlobalSystemMediaTransportControlsSession,
     properties: GlobalSystemMediaTransportControlsSessionMediaProperties,
     // timeline: GlobalSystemMediaTransportControlsSessionTimelineProperties,
 }
@@ -18,7 +20,7 @@ impl MediaSession {
         let properties = session.TryGetMediaPropertiesAsync()?.await?;
         // let timeline = session.GetTimelineProperties()?;
         Ok(Self {
-            // session,
+            session,
             properties,
             // timeline,
         })
@@ -30,6 +32,15 @@ impl MediaSession {
 
     pub fn get_title(&self) -> String {
         self.properties.Title().unwrap_or_default().to_string()
+    }
+
+    pub fn get_status(&self) -> MediaStatus {
+        if let Ok(p) = self.session.GetPlaybackInfo() {
+            if let Ok(s) = p.PlaybackStatus() {
+                return MediaStatus::from(s);
+            }
+        }
+        MediaStatus::Closed
     }
 
     // pub fn get_position(&self) -> HumanDurationData {
